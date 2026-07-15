@@ -11,7 +11,7 @@ namespace TinyWorlds;
 ///
 /// Scoring: Hit targets for points, avoid going out of bounds.
 /// </summary>
-public class TargetChaseEnvironment : IEnvironment
+public class TargetChaseEnvironment : IAnimatedEnvironment
 {
     // These were read out of a Rigidon SimulationConfig that this world built and never stepped —
     // it integrates by hand below, so the physics engine was never doing any work here. Inlined as
@@ -87,6 +87,9 @@ public class TargetChaseEnvironment : IEnvironment
         _targetsHit = 0;
         _cumulativeReward = 0f;
         _terminated = false;
+
+        _trace.Clear();
+        CaptureFrame();
     }
 
     private void SpawnNewTarget()
@@ -181,6 +184,7 @@ public class TargetChaseEnvironment : IEnvironment
         }
 
         _cumulativeReward += stepReward;
+        CaptureFrame();
         return stepReward;
     }
 
@@ -228,5 +232,52 @@ public class TargetChaseEnvironment : IEnvironment
            .SetFill(_terminated ? "#c0392b" : "#2c3e50").SetStroke("transparent");
         svg.AddLine(rocket, rocket + SvgCoords.P(_rocketVelX, _rocketVelY) * 0.25f)
            .SetStroke("#e67e22").SetStrokeWidth(0.2);
+    }
+
+    // ---- replay trace (see IAnimatedEnvironment) --------------------------------------------
+    private readonly List<(float RX, float RY, float VX, float VY, float TX, float TY)> _trace = new();
+
+    /// <inheritdoc/>
+    public bool Recording { get; set; }
+
+    /// <inheritdoc/>
+    public int FrameCount => _trace.Count;
+
+    private void CaptureFrame()
+    {
+        if (Recording) _trace.Add((_rocketX, _rocketY, _rocketVelX, _rocketVelY, _targetX, _targetY));
+    }
+
+    /// <inheritdoc/>
+    public void RenderAnimated(Svg svg, float durationSeconds = 8f)
+    {
+        if (_trace.Count < 2) { Render(svg); return; }
+
+        string dur = SvgAnimation.Duration(durationSeconds);
+        var rockets = _trace.Select(f => SvgCoords.P(f.RX, f.RY)).ToList();
+        var velTips = _trace.Select(f => SvgCoords.P(f.RX + f.VX * 0.25f, f.RY + f.VY * 0.25f)).ToList();
+        var targets = _trace.Select(f => SvgCoords.P(f.TX, f.TY)).ToList();
+
+        svg.AddRectangleFromTo(SvgCoords.P(-ArenaHalfSize, -ArenaHalfSize),
+                               SvgCoords.P(ArenaHalfSize, ArenaHalfSize))
+           .SetFill("transparent").SetStroke("#dfe6e9").SetStrokeWidth(0.15);
+
+        // The path actually flown, drawn once behind everything. A trail is the one thing an
+        // animation still hides: you cannot see where it has been, only where it is.
+        svg.AddPolyline(rockets).SetFill("transparent").SetStroke("#dfe6e9").SetStrokeWidth(0.1);
+
+        // Target jumps on capture, so it animates too — a fixed ring would misreport the task.
+        var ring = svg.AddCircle(targets[0], TargetRadius)
+                      .SetFill("transparent").SetStroke("#27ae60").SetStrokeWidth(0.15);
+        SvgAnimation.AnimateCircle(svg, ring, dur, targets);
+
+        var dot = svg.AddCircle(targets[0], 0.25f).SetFill("#27ae60").SetStroke("transparent");
+        SvgAnimation.AnimateCircle(svg, dot, dur, targets);
+
+        var vel = svg.AddLine(rockets[0], velTips[0]).SetStroke("#e67e22").SetStrokeWidth(0.2);
+        svg.AddAnimateLine(vel, dur, rockets, velTips).Loop();
+
+        var rocket = svg.AddCircle(rockets[0], 0.4f).SetFill("#2c3e50").SetStroke("transparent");
+        SvgAnimation.AnimateCircle(svg, rocket, dur, rockets);
     }
 }

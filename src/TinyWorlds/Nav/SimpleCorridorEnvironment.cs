@@ -20,7 +20,7 @@ namespace TinyWorlds;
 /// - Car reaches all checkpoints (success, reward = 1.0+)
 /// - MaxSteps reached (timeout)
 /// </summary>
-public class SimpleCorridorEnvironment : IEnvironment
+public class SimpleCorridorEnvironment : IAnimatedEnvironment
 {
     private const float CAR_RADIUS = 2f;
     private const float MAX_SPEED = 10f;
@@ -56,6 +56,9 @@ public class SimpleCorridorEnvironment : IEnvironment
         _checkpointIndex = 0;
         _step = 0;
         _crashed = false;
+
+        _trace.Clear();
+        CaptureFrame();
     }
 
     private void GenerateProceduralTrack(int seed)
@@ -187,6 +190,7 @@ public class SimpleCorridorEnvironment : IEnvironment
         if (distanceToWall < CAR_RADIUS)
         {
             _crashed = true;
+            CaptureFrame();
             // Penalty for crashing
             return -0.5f;
         }
@@ -219,6 +223,7 @@ public class SimpleCorridorEnvironment : IEnvironment
             reward += 0.1f;
         }
 
+        CaptureFrame();
         return reward;
     }
 
@@ -258,6 +263,21 @@ public class SimpleCorridorEnvironment : IEnvironment
     /// </summary>
     public void Render(Svg svg)
     {
+        RenderTrack(svg);
+
+        svg.AddCircle(SvgCoords.P(_position), CAR_RADIUS)
+           .SetFill(_crashed ? "#c0392b" : "#e67e22").SetStroke("transparent");
+        svg.AddLine(SvgCoords.P(_position),
+                    SvgCoords.P(_position + new Vector2(MathF.Cos(_heading), MathF.Sin(_heading)) * CAR_RADIUS * 2.5f))
+           .SetStroke(_crashed ? "#c0392b" : "#e67e22").SetStrokeWidth(1.0);
+    }
+
+    /// <summary>
+    /// Walls and checkpoints only — everything that does not move. Split out so RenderAnimated can
+    /// draw the track once and animate only the car over it.
+    /// </summary>
+    private void RenderTrack(Svg svg)
+    {
         // Walls are contiguous per side, so draw each side as one polyline rather than 40 stubs.
         if (_wallSegments.Count > 0)
         {
@@ -281,11 +301,42 @@ public class SimpleCorridorEnvironment : IEnvironment
                .SetStroke(collected ? "#dfe6e9" : next ? "#27ae60" : "#b2bec3")
                .SetStrokeWidth(next ? 1.2 : 0.5);
         }
+    }
 
-        svg.AddCircle(SvgCoords.P(_position), CAR_RADIUS)
-           .SetFill(_crashed ? "#c0392b" : "#e67e22").SetStroke("transparent");
-        svg.AddLine(SvgCoords.P(_position),
-                    SvgCoords.P(_position + new Vector2(MathF.Cos(_heading), MathF.Sin(_heading)) * CAR_RADIUS * 2.5f))
-           .SetStroke(_crashed ? "#c0392b" : "#e67e22").SetStrokeWidth(1.0);
+    // ---- replay trace (see IAnimatedEnvironment) --------------------------------------------
+    private readonly List<(Vector2 Pos, float Heading)> _trace = new();
+
+    /// <inheritdoc/>
+    public bool Recording { get; set; }
+
+    /// <inheritdoc/>
+    public int FrameCount => _trace.Count;
+
+    private void CaptureFrame()
+    {
+        if (Recording) _trace.Add((_position, _heading));
+    }
+
+    /// <inheritdoc/>
+    public void RenderAnimated(Svg svg, float durationSeconds = 8f)
+    {
+        if (_trace.Count < 2) { Render(svg); return; }
+
+        string dur = SvgAnimation.Duration(durationSeconds);
+        var cars = _trace.Select(f => SvgCoords.P(f.Pos)).ToList();
+        var noses = _trace.Select(f => SvgCoords.P(
+            f.Pos + new Vector2(MathF.Cos(f.Heading), MathF.Sin(f.Heading)) * CAR_RADIUS * 2.5f)).ToList();
+
+        RenderTrack(svg);
+
+        svg.AddPolyline(cars).SetFill("transparent").SetStroke("#dfe6e9").SetStrokeWidth(0.6);
+
+        var nose = svg.AddLine(cars[0], noses[0])
+                      .SetStroke(_crashed ? "#c0392b" : "#e67e22").SetStrokeWidth(1.0);
+        svg.AddAnimateLine(nose, dur, cars, noses).Loop();
+
+        var car = svg.AddCircle(cars[0], CAR_RADIUS)
+                     .SetFill(_crashed ? "#c0392b" : "#e67e22").SetStroke("transparent");
+        SvgAnimation.AnimateCircle(svg, car, dur, cars);
     }
 }

@@ -14,7 +14,7 @@ namespace TinyWorlds;
 /// Terminal when: cart off track (+-2.4m) or either pole angle > 36 degrees.
 /// Solved when: survives 100,000 steps.
 /// </summary>
-public class DoublePoleEnvironment : IEnvironment
+public class DoublePoleEnvironment : IAnimatedEnvironment
 {
     private const float Gravity = -9.8f;
     private const float MassCart = 1.0f;
@@ -68,6 +68,9 @@ public class DoublePoleEnvironment : IEnvironment
         _steps = 0;
         _terminated = false;
         Array.Clear(_jiggleBuffer);
+
+        _trace.Clear();
+        CaptureFrame();
     }
 
     public void GetObservations(Span<float> observations)
@@ -113,6 +116,7 @@ public class DoublePoleEnvironment : IEnvironment
         if (outOfBounds || _steps >= MaxSteps)
             _terminated = true;
 
+        CaptureFrame();
         return 1f;
     }
 
@@ -210,5 +214,47 @@ public class DoublePoleEnvironment : IEnvironment
         var tip2 = cart + SvgCoords.P(2f * Length2 * MathF.Sin(_s4), 2f * Length2 * MathF.Cos(_s4));
         svg.AddLine(cart, tip2)
            .SetStroke(_terminated ? "#c0392b" : "#8e44ad").SetStrokeWidth(0.06);
+    }
+
+    // ---- replay trace (see IAnimatedEnvironment) --------------------------------------------
+    private readonly List<(float X, float A1, float A2)> _trace = new();
+
+    /// <inheritdoc/>
+    public bool Recording { get; set; }
+
+    /// <inheritdoc/>
+    public int FrameCount => _trace.Count;
+
+    private void CaptureFrame()
+    {
+        if (Recording) _trace.Add((_s0, _s2, _s4));
+    }
+
+    /// <inheritdoc/>
+    public void RenderAnimated(Svg svg, float durationSeconds = 8f)
+    {
+        if (_trace.Count < 2) { Render(svg); return; }
+
+        string dur = SvgAnimation.Duration(durationSeconds);
+        var carts = _trace.Select(f => SvgCoords.P(f.X, 0f)).ToList();
+        var tips1 = _trace.Select(f => SvgCoords.P(
+            f.X + 2f * Length1 * MathF.Sin(f.A1), 2f * Length1 * MathF.Cos(f.A1))).ToList();
+        var tips2 = _trace.Select(f => SvgCoords.P(
+            f.X + 2f * Length2 * MathF.Sin(f.A2), 2f * Length2 * MathF.Cos(f.A2))).ToList();
+
+        svg.AddLine(SvgCoords.P(-_trackLengthHalf, 0f), SvgCoords.P(_trackLengthHalf, 0f))
+           .SetStroke("#888").SetStrokeWidth(0.02);
+
+        var size = new Vector2(0.4f, 0.2f);
+        var cart = svg.AddRectangleCenterSized(carts[0], size)
+                      .SetFill("#2c3e50").SetStroke("transparent");
+        SvgAnimation.AnimateRectCentre(svg, cart, dur, carts, size);
+
+        var pole1 = svg.AddLine(carts[0], tips1[0]).SetStroke("#e67e22").SetStrokeWidth(0.06);
+        svg.AddAnimateLine(pole1, dur, carts, tips1).Loop();
+
+        // The short pole is the whole difficulty of this task, so it gets its own colour.
+        var pole2 = svg.AddLine(carts[0], tips2[0]).SetStroke("#8e44ad").SetStrokeWidth(0.06);
+        svg.AddAnimateLine(pole2, dur, carts, tips2).Loop();
     }
 }

@@ -14,7 +14,7 @@ namespace TinyWorlds;
 /// - Cart position exceeds ±2.4m
 /// - 1000 steps reached (success!)
 /// </summary>
-public class CartPoleEnvironment : IEnvironment
+public class CartPoleEnvironment : IAnimatedEnvironment
 {
     // Physics constants (from SinglePoleCart.cs)
     private const float GRAVITY = 9.8f;
@@ -61,6 +61,9 @@ public class CartPoleEnvironment : IEnvironment
         _poleAngleSpeed = (float)(random.NextDouble() * 0.1 - 0.05);
         _steps = 0;
         _terminated = false;
+
+        _trace.Clear();
+        CaptureFrame();
     }
 
     public void GetObservations(Span<float> observations)
@@ -113,12 +116,14 @@ public class CartPoleEnvironment : IEnvironment
         if (outOfBounds)
         {
             _terminated = true;
+            CaptureFrame();
             // Return cumulative reward earned so far (survival time)
             return 0f;
         }
 
         // Survived another step - give reward
         // Simple sparse reward: +1 per step survived
+        CaptureFrame();
         return 1f;
     }
 
@@ -160,5 +165,45 @@ public class CartPoleEnvironment : IEnvironment
            .SetStroke(_terminated ? "#c0392b" : "#e67e22").SetStrokeWidth(0.06);
         svg.AddCircle(tip, 0.05f)
            .SetFill(_terminated ? "#c0392b" : "#e67e22").SetStroke("transparent");
+    }
+
+    // ---- replay trace (see IAnimatedEnvironment) --------------------------------------------
+    private readonly List<(float CartX, float PoleAngle)> _trace = new();
+
+    /// <inheritdoc/>
+    public bool Recording { get; set; }
+
+    /// <inheritdoc/>
+    public int FrameCount => _trace.Count;
+
+    private void CaptureFrame()
+    {
+        if (Recording) _trace.Add((_cartPosition, _poleAngle));
+    }
+
+    /// <inheritdoc/>
+    public void RenderAnimated(Svg svg, float durationSeconds = 8f)
+    {
+        if (_trace.Count < 2) { Render(svg); return; }
+
+        string dur = SvgAnimation.Duration(durationSeconds);
+        var carts = _trace.Select(f => SvgCoords.P(f.CartX, 0f)).ToList();
+        var tips = _trace.Select(f => SvgCoords.P(
+            f.CartX + 2f * LENGTH * MathF.Sin(f.PoleAngle),
+            2f * LENGTH * MathF.Cos(f.PoleAngle))).ToList();
+
+        svg.AddLine(SvgCoords.P(-HRAIL_LENGTH, 0f), SvgCoords.P(HRAIL_LENGTH, 0f))
+           .SetStroke("#888").SetStrokeWidth(0.02);
+
+        var size = new Vector2(0.4f, 0.2f);
+        var cart = svg.AddRectangleCenterSized(carts[0], size)
+                      .SetFill("#2c3e50").SetStroke("transparent");
+        SvgAnimation.AnimateRectCentre(svg, cart, dur, carts, size);
+
+        var pole = svg.AddLine(carts[0], tips[0]).SetStroke("#e67e22").SetStrokeWidth(0.06);
+        svg.AddAnimateLine(pole, dur, carts, tips).Loop();
+
+        var tip = svg.AddCircle(tips[0], 0.05f).SetFill("#e67e22").SetStroke("transparent");
+        SvgAnimation.AnimateCircle(svg, tip, dur, tips);
     }
 }
