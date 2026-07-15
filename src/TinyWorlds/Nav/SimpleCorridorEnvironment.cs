@@ -19,6 +19,39 @@ namespace TinyWorlds;
 /// - Car hits a wall (failure, reward = 0)
 /// - Car reaches all checkpoints (success, reward = 1.0+)
 /// - MaxSteps reached (timeout)
+///
+/// ---------------------------------------------------------------------------------------------
+/// KNOWN BROKEN — this world is effectively unsolvable, and not in an interesting way. Measured,
+/// not guessed:
+///
+///   * An omniscient oracle (given the checkpoint list, steering straight at the next one, no
+///     sensors needed) collects 1 of 40 checkpoints. CEM over a linear policy manages 6 of 40 and
+///     plateaus by generation 20.
+///
+///   * Root cause: <see cref="Reset"/> starts the car at (0,0) with heading 0, i.e. facing +x —
+///     but the centreline y = 30*sin(x/20) leaves the origin at atan(1.5) = 56 degrees. The turn
+///     rate is 0.08*(speed/MAX_SPEED) radians per step over speed*0.1 units travelled, which is
+///     0.08 rad per UNIT regardless of speed — a minimum turning radius of 12.5, always. Slowing
+///     down does not help you turn.
+///
+///   * Checkpoint[1] lies INSIDE that turning circle: 7.54 from its centre, so the closest any
+///     possible trajectory gets is 12.5 - 7.54 = 4.96, against a CHECKPOINT_RADIUS of 5. A margin
+///     of 0.04 units. Discrete stepping overshoots it, and because checkpoints must be collected
+///     in order, missing that one caps progress at 1/40 forever no matter how well the remaining
+///     197 units are driven.
+///
+/// Starting the car along the track (heading = atan(1.5)) lifts CEM from 15% to 42.5%, and also
+/// doubling the steering authority only reaches 47.5% — so the start heading is the provable bug
+/// but not the only one; beyond that the 320-step budget binds against a 290-unit centreline that
+/// needs ~90% of max speed throughout. This wants a redesign, not a tweak, which is why nothing has
+/// been changed here: any fix alters the benchmark, and that is a call for whoever owns it.
+///
+/// Its own evolution test is [Fact(Skip = "Slow test")], which is how this survived unnoticed —
+/// a skipped test on an unsolvable world reports nothing forever.
+///
+/// Use <see cref="FollowTheCorridorEnvironment"/> instead: a real drawn track, solved completely by
+/// a linear policy in 11 generations.
+/// ---------------------------------------------------------------------------------------------
 /// </summary>
 public class SimpleCorridorEnvironment : IAnimatedEnvironment
 {

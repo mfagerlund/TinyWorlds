@@ -27,4 +27,11 @@
     <PackageReference Include="FluentSvg" Version="1.0.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- The race track is an authored drawing, not something a procedure can generate, so it ships
+         inside the assembly. It used to be read from an absolute path on one developer's machine
+         (C:\Dev\Colonel\Data\Besofa\Race Track.svg), which meant the world only existed there. -->
+    <EmbeddedResource Include="Nav\RaceTrack.svg" />
+  </ItemGroup>
+
 </Project>

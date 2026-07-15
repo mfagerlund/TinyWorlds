@@ -69,17 +69,22 @@ move.** (GitHub renders SVG in READMEs statically, so you get the first frame he
 | | |
 |---|---|
 | ![cartpole](gallery/cartpole.svg) 400 steps, animated | ![doublepole](gallery/doublepole.svg) 300 steps, animated |
-| ![targetchase](gallery/targetchase.svg) 300 steps, animated | ![corridor](gallery/corridor.svg) the start line — see below |
+| ![targetchase](gallery/targetchase.svg) 300 steps, animated | ![racetrack](gallery/racetrack.svg) a complete lap, animated |
 | ![spiral](gallery/spiral.svg) | ![xor](gallery/xor.svg) |
-| ![landscape](gallery/landscape.svg) | |
+| ![landscape](gallery/landscape.svg) | ![corridor](gallery/corridor.svg) parked — this world is broken, see below |
 
 XOR and Spiral are stills because they are static datasets — the picture *is* the dataset, and
 animating a ring hopping between fixed points would be motion for its own sake. Landscape is a
 still for a different reason: its heatmap is 1,600 rects re-sliced through the agent's position
 every frame, so animating it honestly means animating all of them.
 
-The corridor is at the start line because you cannot hand-write a driver for it — see its row in
-the table below. Showing a bad policy would advertise the driver, not the world.
+The racetrack lap is a real evolved policy: a **linear** map from 9 sensors to (steering, throttle),
+found by CEM in 11 generations, collecting 256/256 progress markers in 222 steps. The weights are in
+`samples/Gallery/Program.cs` — nothing hand-tuned.
+
+The corridor is parked at the start line because `SimpleCorridorEnvironment` is **unsolvable**, and
+that is a measured claim, not a shrug: an omniscient oracle handed the checkpoint list collects 1 of
+40. Details and root cause are in the class docs.
 
 ## The worlds
 
@@ -91,7 +96,8 @@ the table below. Showing a bad policy would advertise the driver, not the world.
 | `SpiralEnvironment` | 2 | 1 | Two interleaved spirals. Looks trivial until you see the picture. |
 | `LandscapeEnvironment` | varies | n | Gradient descent as a control problem over Rosenbrock/Rastrigin/Ackley/Schwefel/Sphere. |
 | `TargetChaseEnvironment` | 4 | 2 | Point-mass rocket chasing targets in a box. |
-| `SimpleCorridorEnvironment` | 9 | 2 | Procedural sine corridor, 9 range sensors, 40 checkpoints. A real benchmark — you cannot hand-write a driver for it. |
+| `FollowTheCorridorEnvironment` | 9 | 2 | A drifting car on a hand-drawn race track, 9 range sensors. The track is authored, not generated, so its corners have no pattern to memorise. Solved by a linear policy in 11 CEM generations — a good optimizer smoke test rather than a hard benchmark. |
+| `SimpleCorridorEnvironment` | 9 | 2 | Procedural sine corridor. **Broken — unsolvable.** Kept, documented, and not silently "fixed", because any fix changes the benchmark. |
 
 ## The one rule
 
