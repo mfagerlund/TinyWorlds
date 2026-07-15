@@ -175,6 +175,13 @@ public class Grid
         }
     }
 
+    /// <summary>
+    /// The world-space box a cell covers. Exists for debug rendering — drawing the cells a ray walked
+    /// is how you see a broken DDA traversal, which is otherwise a silent wrong-answer bug.
+    /// </summary>
+    public (Vector2 from, Vector2 to) GetGridArea((int X, int Y) cell) =>
+        (new Vector2(cell.X, cell.Y) * CellSize, new Vector2(cell.X + 1, cell.Y + 1) * CellSize);
+
     private bool Contains(int x, int y) => x >= 0 && y >= 0 && x < GridSize && y < GridSize;
 
     private (int X, int Y) ToCell(Vector2 worldPosition)
