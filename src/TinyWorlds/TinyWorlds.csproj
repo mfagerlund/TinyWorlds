@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <PackageId>TinyWorlds</PackageId>
+    <Version>0.1.0</Version>
+    <Authors>Mattias Fagerlund</Authors>
+    <Description>Tiny, dependency-free simulated worlds for .NET — classic control, toy classification and navigation environments that render themselves to SVG.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/mfagerlund/TinyWorlds</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/mfagerlund/TinyWorlds</RepositoryUrl>
+    <PackageTags>reinforcement-learning;rl;gym;environments;simulation;svg;benchmark</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- FluentSvg is the ONLY dependency, and it is deliberate: every world renders itself, so a
+         world can be inspected without a game engine, a GPU, or a running trainer. Adding anything
+         heavier here (Godot, ILGPU, a physics engine) defeats the entire point of this repo —
+         put that in an adapter project on the consumer's side instead, the way
+         Evolvatron.Clones.RigidonPhysics does behind IMotorBody. -->
+    <PackageReference Include="FluentSvg" Version="1.0.0" />
+  </ItemGroup>
+
+</Project>

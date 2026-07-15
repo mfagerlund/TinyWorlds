@@ -1,0 +1,7 @@
+<svg viewBox="-2.4 -1.0499763 5.8 2.1499763" stroke="DarkGoldenRod" stroke-width="1" fill="transparent" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="480mm" height="200mm" >
+  <title>cartpole</title>
+  <path stroke="#888" stroke-width="0.02" d="M-2.4 -0 L2.4 -0"/>
+  <rect fill="#2c3e50" stroke="transparent" x="-0.23872718" y="-0.1" width="0.4" height="0.2"/>
+  <path stroke="#e67e22" stroke-width="0.06" d="M-0.038727175 -0 L-0.045597356 -0.9999764"/>
+  <circle  fill="#e67e22" stroke="transparent" cx="-0.045597356" cy="-0.9999764" r="0.05" />
+</svg>

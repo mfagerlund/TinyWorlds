@@ -1,0 +1,8 @@
+<svg viewBox="-10 -10 21 21" stroke="DarkGoldenRod" stroke-width="1" fill="transparent" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="420mm" height="420mm" >
+  <title>targetchase</title>
+  <rect fill="transparent" stroke="#dfe6e9" stroke-width="0.15" x="-10" y="10" width="20" height="-20"/>
+  <circle  fill="transparent" stroke="#27ae60" stroke-width="0.15" cx="-0.5278291" cy="-4.345666" r="1.5" />
+  <circle  fill="#27ae60" stroke="transparent" cx="-0.5278291" cy="-4.345666" r="0.25" />
+  <circle  fill="#2c3e50" stroke="transparent" cx="-4.395389" cy="5.554223" r="0.4" />
+  <path stroke="#e67e22" stroke-width="0.2" d="M-4.395389 5.554223 L-3.9003103 5.604645"/>
+</svg>

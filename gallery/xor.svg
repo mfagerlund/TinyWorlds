@@ -1,0 +1,9 @@
+<svg viewBox="-0.2 -1.2 2.4 2.4" stroke="DarkGoldenRod" stroke-width="1" fill="transparent" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="320mm" height="320mm" >
+  <title>xor</title>
+  <rect fill="transparent" stroke="#ddd" stroke-width="0.01" x="-0.2" y="0.2" width="1.4000001" height="-1.4000001"/>
+  <circle  fill="transparent" stroke="#2c3e50" stroke-width="0.02" cx="0" cy="-0" r="0.08" />
+  <circle  fill="#2c3e50" stroke="#2c3e50" stroke-width="0.02" cx="0" cy="-1" r="0.08" />
+  <circle  fill="#2c3e50" stroke="#2c3e50" stroke-width="0.02" cx="1" cy="-0" r="0.08" />
+  <circle  fill="transparent" stroke="#e67e22" stroke-width="0.02" cx="1" cy="-0" r="0.15" />
+  <circle  fill="transparent" stroke="#2c3e50" stroke-width="0.02" cx="1" cy="-1" r="0.08" />
+</svg>
